@@ -1,9 +1,11 @@
-import { setUser } from "../config.js"
+import { setUser } from "../config";
 
 export function handlerLogin(cmdName: string, ...args: string[]) {
-  if (args.length === 0) {
-    throw new Error("no user provided")
+  if (args.length !== 1) {
+    throw new Error(`usage: ${cmdName} <name>`);
   }
-  setUser(args[0]);
-  console.log(`the user has been set`);
+
+  const userName = args[0];
+  setUser(userName);
+  console.log("User switched successfully!");
 }

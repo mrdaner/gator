@@ -8,7 +8,15 @@ type Config = {
 };
 
 export function setUser(userName: string) {
-  const config = readConfig();
+  let config;
+  try {
+    config = readConfig();
+  } catch {
+    config = {
+  dbUrl: "",
+  currentUserName: "",
+};
+    }
   config.currentUserName = userName;
   writeConfig(config);
 }
