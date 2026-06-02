@@ -3,9 +3,16 @@ import {
   registerCommand,
   runCommand,
 } from "./commands/commands";
-import { handlerLogin, handlerRegister } from "./commands/users";
+import {
+  handlerListUsers,
+  handlerLogin,
+  handlerRegister,
+} from "./commands/users";
+import { handlerReset } from "./commands/reset";
+import { handlerAgg } from "./commands/aggregate";
+import { addfeed } from "./commands/feeds";
 
-async function main(): Promise<void> {
+async function main() {
   const args = process.argv.slice(2);
 
   if (args.length < 1) {
@@ -19,6 +26,11 @@ async function main(): Promise<void> {
 
   registerCommand(commandsRegistry, "login", handlerLogin);
   registerCommand(commandsRegistry, "register", handlerRegister);
+  registerCommand(commandsRegistry, "reset", handlerReset);
+  registerCommand(commandsRegistry, "users", handlerListUsers);
+  registerCommand(commandsRegistry, "agg", handlerAgg);
+  registerCommand(commandsRegistry, "addfeed", addfeed);
+
   try {
     await runCommand(commandsRegistry, cmdName, ...cmdArgs);
   } catch (err) {
@@ -33,3 +45,4 @@ async function main(): Promise<void> {
 }
 
 main();
+
