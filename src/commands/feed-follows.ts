@@ -1,33 +1,68 @@
-import { readConfig } from "src/config";
-import { getUser } from "../lib/db/queries/users";
-import { getFeedByUrl } from "../lib/db/queries/feeds";
-import { createFeedFollow } from "../lib/db/queries/feed-follows";
+import { getFeedByURL } from "../lib/db/queries/feeds";
+import type { User } from "../lib/db/schema";
+import {
+  createFeedFollow,
+  getFeedFollowsForUser,
+  deleteFeedFollow,
+} from "../lib/db/queries/feed-follows";
 
-export async function handlerFollow(cmdName: string, ...args: string[]) {
+
+export async function handlerFollow(cmdName: string, user: User, ...args: string[]) {
   if (args.length !== 1) {
-    throw new Error(`usage: ${cmdName} <url>`);
+    throw new Error(`usage: ${cmdName} <feed_url>`);
   }
 
-  const config = readConfig();
-  const user = await getUser(config.currentUserName);
-
-  if (!user) {
-    throw new Error(`User ${config.currentUserName} not found`);
-  }
-
-  const url = args[0];
-
-  const feed = await getFeedByUrl(url);
+  const feedURL = args[0];
+  const feed = await getFeedByURL(feedURL);
   if (!feed) {
-    throw new Error(`Feed not found: ${url}`);
+    throw new Error(`Feed not found: ${feedURL}`);
   }
 
-  const feedFollow = await createFeedFollow(user.id, feed.id);
-  if (!feedFollow) {
-    throw new Error("Failed to follow feed");
-  }
+  const ffRow = await createFeedFollow(user.id, feed.id);
 
-  console.log(
-    `The ${feedFollow.feedName} is followed by ${feedFollow.userName} successfully`,
-  );
+  console.log(`Feed follow created:`);
+  printFeedFollow(ffRow.userName, ffRow.feedName);
 }
+
+export async function handlerListFeedFollows(cmdName: string, user: User, ...args: string[]) {
+
+  const feedFollows = await getFeedFollowsForUser(user.id);
+  if (feedFollows.length === 0) {
+    console.log(`No feed follows found for this user.`);
+    return;
+  }
+
+  console.log(`Feed follows for user %s:`, user.id);
+  for (let ff of feedFollows) {
+    console.log(`* %s`, ff.feedName);
+  }
+}
+
+export function printFeedFollow(username: string, feedname: string) {
+  console.log(`* User:          ${username}`);
+  console.log(`* Feed:          ${feedname}`);
+}
+
+export async function handlerUnfollow(
+  cmdName: string,
+  user: User,
+  ...args: string[]
+) {
+  if (args.length !== 1) {
+    throw new Error(`usage: ${cmdName} <feed_url>`);
+  }
+
+  const feedURL = args[0];
+  let feed = await getFeedByURL(feedURL);
+  if (!feed) {
+    throw new Error(`Feed not found for url: ${feedURL}`);
+  }
+
+  const result = await deleteFeedFollow(feed.id, user.id);
+  if (!result) {
+    throw new Error(`Failed to unfollow feed: ${feedURL}`);
+  }
+
+  console.log(`%s unfollowed successfully!`, feed.name);
+}
+
